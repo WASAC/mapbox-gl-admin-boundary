@@ -1,5 +1,5 @@
 # mapbox-gl-admin-boundary
-![GitHub](https://img.shields.io/github/license/watergis/mapbox-gl-admin-boundary)
+![GitHub](https://img.shields.io/github/license/wasac/mapbox-gl-admin-boundary)
 
 This module adds area switcher control which is able to zoom administrative boundaries to mapbox-gl
 
@@ -11,7 +11,7 @@ npm i https://github.com/WASAC/mapbox-gl-admin-boundary.git
 
 ## Demo:
 
-See [demo](https://watergis.github.io/mapbox-gl-admin-boundary).
+See [demo](https://wasac.github.io/mapbox-gl-admin-boundary).
 
 ## Test:
 
