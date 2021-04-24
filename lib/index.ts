@@ -196,21 +196,48 @@ export default class MapboxAdminBoundaryControl implements IControl
       selectedId?: number,
       selectedBoundary?: 'province' | 'district' | 'sector' | 'cell' | 'village'
     ) {
-      if (selectedId && selectedBoundary) {
-        this.zoomToSelectedFeature(selectedId, selectedBoundary);
+      const province: HTMLSelectElement = <HTMLSelectElement>document.getElementById(`mapbox-gl-admin-select-province`);  
+      const district: HTMLSelectElement = <HTMLSelectElement>document.getElementById(`mapbox-gl-admin-select-district`);  
+      const sector: HTMLSelectElement = <HTMLSelectElement>document.getElementById(`mapbox-gl-admin-select-sector`); 
+      const cell: HTMLSelectElement = <HTMLSelectElement>document.getElementById(`mapbox-gl-admin-select-cell`); 
+      const village: HTMLSelectElement = <HTMLSelectElement>document.getElementById(`mapbox-gl-admin-select-village`);  
+
+      if (selectedBoundary){
+        if (selectedId) {
+          this.zoomToSelectedFeature(selectedId, selectedBoundary);
+        }else{
+          let parentId: any;
+          switch (selectedBoundary){
+            case 'province':
+              break;
+            case 'district':
+              parentId = province.value;
+              this.zoomToSelectedFeature(parentId, 'province');
+              break;
+            case 'sector':
+              parentId = district.value;
+              this.zoomToSelectedFeature(parentId, 'district');
+              break;
+            case 'cell':
+              parentId = sector.value;
+              this.zoomToSelectedFeature(parentId, 'sector');
+              break;
+            case 'village':
+              parentId = cell.value;
+              this.zoomToSelectedFeature(parentId, 'cell');
+              break;
+            default:
+              break;
+          }
+        }
       }
+      
 
       if (selectedBoundary && selectedBoundary === 'village'){
         return;
       }
 
       return new Promise<any>((resolve: (value?: any) => void, reject: (reason?: any) => void) => {
-        const province: HTMLSelectElement = <HTMLSelectElement>document.getElementById(`mapbox-gl-admin-select-province`);  
-        const district: HTMLSelectElement = <HTMLSelectElement>document.getElementById(`mapbox-gl-admin-select-district`);  
-        const sector: HTMLSelectElement = <HTMLSelectElement>document.getElementById(`mapbox-gl-admin-select-sector`); 
-        const cell: HTMLSelectElement = <HTMLSelectElement>document.getElementById(`mapbox-gl-admin-select-cell`); 
-        const village: HTMLSelectElement = <HTMLSelectElement>document.getElementById(`mapbox-gl-admin-select-village`);  
-  
         switch (selectedBoundary){
           case 'province':
             this.setSelectItems(district, 'district', 'District');
