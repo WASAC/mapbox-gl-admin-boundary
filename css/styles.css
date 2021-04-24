@@ -1,6 +1,6 @@
 .mapboxgl-admin-list
 {
-    display: none;
+    display: none; 
 }
 
 .mapboxgl-ctrl-group .mapboxgl-admin-list button
@@ -39,18 +39,58 @@
     background-size: 70%;
 }
 
-.mapboxgl-ctrl-admin-boundary select {
-    width: auto;
-    display: flex;
-    height: 25px;
-    padding: 0 8px;
-    align-items: center;
+.mapboxgl-admin-boundary-table {
+    border-spacing: 0px;
+}
+
+.mapboxgl-admin-boundary-table td {
+    padding: 0px;
+}
+
+.mapboxgl-ctrl-admin-boundary {
+    overflow: hidden;
+    width: 30px;
+    margin: 2px auto;
+    text-align: center;
+  }
+  .mapboxgl-ctrl-admin-boundary select {
+    width: 100%;
+    padding-right: 1em;
     cursor: pointer;
     text-indent: 0.01px;
     text-overflow: ellipsis;
     border: none;
-    outline: rgba(151,151,151, 1.0);
+    outline: none;
     background: transparent;
     background-image: none;
     box-shadow: none;
-}
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .mapboxgl-ctrl-admin-boundary select::-ms-expand {
+      display: none;
+  }
+  .mapboxgl-ctrl-admin-boundary {
+    position: relative;
+    border-radius: 2px;
+    border: 2px solid skyblue;
+    border-radius: 50px;
+    background: #ffffff;
+  }
+  .mapboxgl-ctrl-admin-boundary::before {
+    position: absolute;
+    top: 0.8em;
+    right: 0.8em;
+    width: 0;
+    height: 0;
+    padding: 0;
+    content: '';
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid skyblue;
+    pointer-events: none;
+  }
+  .mapboxgl-ctrl-admin-boundary select {
+    padding: 8px 38px 8px 8px;
+    color: black;
+  }

@@ -40,12 +40,13 @@ export default class MapboxAdminBoundaryControl implements IControl
     {
         this.map = map;
 
+        const this_ = this;
         this.map.on('load', function() {
-          map.addSource('selected-boundary', { type: 'geojson', data: {
+          this_.map?.addSource('selected-boundary', { type: 'geojson', data: {
             'type': 'FeatureCollection',
             'features': []
           } });
-          map.addLayer({
+          this_.map?.addLayer({
             'id': 'selected-boundary',
             'type': 'fill',
             'source': 'selected-boundary',
@@ -56,6 +57,7 @@ export default class MapboxAdminBoundaryControl implements IControl
             },
             'filter': ['==', '$type', 'Polygon']
           });
+          this_.selectOnChange();
         })
 
         this.controlContainer = document.createElement("div");
@@ -91,82 +93,20 @@ export default class MapboxAdminBoundaryControl implements IControl
         table.className = 'mapboxgl-admin-boundary-table';
         this.mainContainer.appendChild(table);
 
-        const province = this.createSelection('province','Province');
-        const district = this.createSelection('district','District');
-        const sector = this.createSelection('sector','Sector');
-        const cell = this.createSelection('cell','Cell');
-        const village = this.createSelection('village','Village');
-        
-        table.appendChild(province.tr);
-        table.appendChild(district.tr);
-        table.appendChild(sector.tr);
-        table.appendChild(cell.tr);
-        table.appendChild(village.tr);
-
-        this.getProvinces(province.content);
-
-        province.content.addEventListener('change', (event: any) => {
-          const id = event.target.value;
-          const geojson: GeoJSON.FeatureCollection = this.adminList['province'];
-          this.zoomToSelectedFeature(geojson, id);
-          this.getDistricts().then((selectedId:string)=>{
-            this.changeSelectVisibility('district','province');
-            this.changeSelectVisibility('sector','district');
-            this.changeSelectVisibility('cell','sector');
-            this.changeSelectVisibility('village','cell');
+        [
+          { id: 'province',title: 'Province'},
+          { id: 'district',title: 'District'},
+          { id: 'sector',title: 'Sector'},
+          { id: 'cell',title: 'Cell'},
+          { id: 'village',title: 'Village'},
+        ].forEach((value: any) =>{
+          const select = this.createSelection(value.id, value.title);
+          table.appendChild(select.tr);
+          select.content.addEventListener('change', (event: any) => {
+            const id = event.target.value;
+            this.selectOnChange(id, value.id);
           });
-          this.changeSelectVisibility('district','province');
-          this.changeSelectVisibility('sector','district');
-          this.changeSelectVisibility('cell','sector');
-          this.changeSelectVisibility('village','cell');
-        });
-
-        district.content.addEventListener('change', (event: any) => {
-          const id = event.target.value;
-          const geojson: GeoJSON.FeatureCollection = this.adminList['district'];
-          console.log('district',id)
-          this.zoomToSelectedFeature(geojson, id);
-          this.getSectors().then((selectedId:string)=>{
-            this.changeSelectVisibility('sector','district');
-          this.changeSelectVisibility('cell','sector');
-          this.changeSelectVisibility('village','cell');
-          });
-          this.changeSelectVisibility('sector','district');
-          this.changeSelectVisibility('cell','sector');
-          this.changeSelectVisibility('village','cell');
-        });
-
-        sector.content.addEventListener('change', (event: any) => {
-          const id = event.target.value;
-          const geojson: GeoJSON.FeatureCollection = this.adminList['sector'];
-          this.zoomToSelectedFeature(geojson, id);
-          console.log('sector',id)
-          this.getCells().then(()=>{
-            this.changeSelectVisibility('cell','sector');
-          this.changeSelectVisibility('village','cell');
-          });
-          this.changeSelectVisibility('cell','sector');
-          this.changeSelectVisibility('village','cell');
-        });
-
-        cell.content.addEventListener('change', (event: any) => {
-          const id = event.target.value;
-          const geojson: GeoJSON.FeatureCollection = this.adminList['cell'];
-          console.log('cell',id)
-          this.zoomToSelectedFeature(geojson, id);
-          this.getVillages().then(()=>{
-            this.changeSelectVisibility('village','cell');
-          });
-          this.changeSelectVisibility('village','cell');
-          
-        });
-
-        village.content.addEventListener('change', (event: any) => {
-          const id = event.target.value;
-          const geojson: GeoJSON.FeatureCollection = this.adminList['village'];
-          this.zoomToSelectedFeature(geojson, id);
-        });
-
+        })
         return this.controlContainer;
     }
 
@@ -182,7 +122,7 @@ export default class MapboxAdminBoundaryControl implements IControl
       if (id !== 'province'){
         content.style.display = 'none';
       }else{
-        content.style.display = 'inline';
+        content.style.display = 'flex';
       }
 
       content = this.setSelectItems(content, id, title);
@@ -216,26 +156,24 @@ export default class MapboxAdminBoundaryControl implements IControl
       return select;
     }
 
-    private changeSelectVisibility(id: string, parentId: string) {
-      const parent: HTMLSelectElement = <HTMLSelectElement>document.getElementById(`mapbox-gl-admin-select-${parentId}`); 
+    private changeSelectVisibility(id: string, visibility: boolean) {
       const target : HTMLSelectElement = <HTMLSelectElement>document.getElementById(`mapbox-gl-admin-select-${id}`); 
-      if (parent.value === ""){
-        target.style.display = 'none';
+      if (visibility){
+        target.style.display = 'flex';
       }else{
-        target.style.display = 'inline';
+        target.style.display = 'none';
       }
     }
 
-    private changeSelectDisabled(id: string, value:boolean) {
-      const target : HTMLSelectElement = <HTMLSelectElement>document.getElementById(`mapbox-gl-admin-select-${id}`); 
-      if (!target) return;
-      target.disabled = value;
-    }
+    private zoomToSelectedFeature(
+      selectedId: number,
+      selectedBoundary: 'province' | 'district' | 'sector' | 'cell' | 'village'
+    ){
+      const geojson: GeoJSON.FeatureCollection = this.adminList[selectedBoundary];
 
-    private zoomToSelectedFeature(geojson: GeoJSON.FeatureCollection, id: number){
       for (let i = 0; i < geojson.features.length; i++){
         const f = geojson.features[i];
-        if (f.properties?.id == id){
+        if (f.properties?.id == selectedId){
           // @ts-ignore
           this.map?.fitBounds(f.bbox);
           // @ts-ignore
@@ -254,126 +192,100 @@ export default class MapboxAdminBoundaryControl implements IControl
       }
     }
 
-    private setSelectedValue(id: string, title: string, value?: string): void {
-      const select: HTMLSelectElement = <HTMLSelectElement>document.getElementById(`mapbox-gl-admin-select-${id}`); 
-      if (!select) return;
-      // select.value = value?value:'';
-      this.setSelectItems(select, id, title);
-    }
+    private selectOnChange(
+      selectedId?: number,
+      selectedBoundary?: 'province' | 'district' | 'sector' | 'cell' | 'village'
+    ) {
+      if (selectedId && selectedBoundary) {
+        this.zoomToSelectedFeature(selectedId, selectedBoundary);
+      }
 
-    private getProvinces(select: HTMLSelectElement){
-      this.setSelectedValue('district', 'District');
-      this.setSelectedValue('sector','Sector');
-      this.setSelectedValue('cell', 'Cell');
-      this.setSelectedValue('village', 'Village');
+      if (selectedBoundary && selectedBoundary === 'village'){
+        return;
+      }
 
-      this.changeSelectDisabled('province', false);
-      this.changeSelectDisabled('district', false);
-      this.changeSelectDisabled('sector', true);
-      this.changeSelectDisabled('cell', true);
-      this.changeSelectDisabled('village', true);
-
-      const url = `${this.url}/province.geojson`;
       return new Promise<any>((resolve: (value?: any) => void, reject: (reason?: any) => void) => {
+        const province: HTMLSelectElement = <HTMLSelectElement>document.getElementById(`mapbox-gl-admin-select-province`);  
+        const district: HTMLSelectElement = <HTMLSelectElement>document.getElementById(`mapbox-gl-admin-select-district`);  
+        const sector: HTMLSelectElement = <HTMLSelectElement>document.getElementById(`mapbox-gl-admin-select-sector`); 
+        const cell: HTMLSelectElement = <HTMLSelectElement>document.getElementById(`mapbox-gl-admin-select-cell`); 
+        const village: HTMLSelectElement = <HTMLSelectElement>document.getElementById(`mapbox-gl-admin-select-village`);  
+  
+        switch (selectedBoundary){
+          case 'province':
+            this.setSelectItems(district, 'district', 'District');
+            this.setSelectItems(sector, 'sector', 'Sector');
+            this.setSelectItems(cell, 'cell', 'Cell');
+            this.setSelectItems(village, 'village', 'Village');
+            break;
+          case 'district':
+            this.setSelectItems(sector, 'sector', 'Sector');
+            this.setSelectItems(cell, 'cell', 'Cell');
+            this.setSelectItems(village, 'village', 'Village');
+            break;
+          case 'sector':
+            this.setSelectItems(cell, 'cell', 'Cell');
+            this.setSelectItems(village, 'village', 'Village');
+            break;
+          case 'cell':
+            this.setSelectItems(village, 'village', 'Village');
+            break;
+          default:
+            break;
+        }
+
+        const prov_id: string | undefined = (province && province.value !== '')?province.value:undefined;
+        const dist_id: string | undefined = (district && district.value !== '')?district.value:undefined;
+        const sect_id: string | undefined = (sector && sector.value !== '')?sector.value:undefined;
+        const cell_id: string | undefined = (cell && cell.value !== '')?cell.value:undefined;
+
+        let url: string = '';
+        let config: any;
+        if (prov_id && dist_id && sect_id && cell_id){
+          url = `${this.url}/${prov_id}/${dist_id}/${sect_id}/${cell_id}/village.geojson`;
+          config = { id: 'village', title: 'Village', select: village }
+
+          this.changeSelectVisibility('district',true);
+          this.changeSelectVisibility('sector',true);
+          this.changeSelectVisibility('cell',true);
+          this.changeSelectVisibility('village',true);
+        }else if (prov_id && dist_id && sect_id){
+          url = `${this.url}/${prov_id}/${dist_id}/${sect_id}/cell.geojson`;
+          config = { id: 'cell', title: 'Cell', select: cell}
+
+          this.changeSelectVisibility('district',true);
+          this.changeSelectVisibility('sector',true);
+          this.changeSelectVisibility('cell',true);
+          this.changeSelectVisibility('village',false);
+        }else if (prov_id && dist_id){
+          url = `${this.url}/${prov_id}/${dist_id}/sector.geojson`;
+          config = { id: 'sector', title: 'Sector', select: sector}
+
+          this.changeSelectVisibility('district',true);
+          this.changeSelectVisibility('sector',true);
+          this.changeSelectVisibility('cell',false);
+          this.changeSelectVisibility('village',false);
+        }else if (prov_id){
+          url = `${this.url}/${prov_id}/district.geojson`;
+          config = { id: 'district', title: 'District', select:district}
+
+          this.changeSelectVisibility('district',true);
+          this.changeSelectVisibility('sector',false);
+          this.changeSelectVisibility('cell',false);
+          this.changeSelectVisibility('village',false);
+        }else{
+          url = `${this.url}/province.geojson`;
+          config = { id: 'province', title: 'Province', select:province}
+
+          this.changeSelectVisibility('district',false);
+          this.changeSelectVisibility('sector',false);
+          this.changeSelectVisibility('cell',false);
+          this.changeSelectVisibility('village',false);
+        }
         axios.get(url).then(res => {
           const geojson = res.data;
-          this.adminList['province'] = geojson;
-          this.setSelectItems(select, 'province', 'Province', geojson);
-          resolve();
-        })
-      })
-    }
-
-    private getDistricts() {
-      this.setSelectedValue('sector','Sector');
-      this.setSelectedValue('cell', 'Cell');
-      this.setSelectedValue('village', 'Village');
-
-      this.changeSelectDisabled('province', false);
-      this.changeSelectDisabled('district', false);
-      this.changeSelectDisabled('sector', false);
-      this.changeSelectDisabled('cell', true);
-      this.changeSelectDisabled('village', true);
-
-      const province: HTMLSelectElement = <HTMLSelectElement>document.getElementById(`mapbox-gl-admin-select-province`);   
-      const url = `${this.url}/${province.value}/district.geojson`;
-      return new Promise<any>((resolve: (value?: any) => void, reject: (reason?: any) => void) => {
-        axios.get(url).then(res => {
-          const geojson = res.data;
-          this.adminList['district'] = geojson;
-          const select: HTMLSelectElement = <HTMLSelectElement>document.getElementById(`mapbox-gl-admin-select-district`);   
-          this.setSelectItems(select, 'district', 'District', geojson);
-          resolve();
-        })
-      })
-    }
-
-    private getSectors() {
-      this.setSelectedValue('cell', 'Cell');
-      this.setSelectedValue('village', 'Village');
-
-      this.changeSelectDisabled('province', false);
-      this.changeSelectDisabled('district', false);
-      this.changeSelectDisabled('sector', false);
-      this.changeSelectDisabled('cell', true);
-      this.changeSelectDisabled('village', true);
-
-      const province: HTMLSelectElement = <HTMLSelectElement>document.getElementById(`mapbox-gl-admin-select-province`);  
-      const district: HTMLSelectElement = <HTMLSelectElement>document.getElementById(`mapbox-gl-admin-select-district`);   
-      const url = `${this.url}/${province.value}/${district.value}/sector.geojson`;
-      return new Promise<any>((resolve: (value?: any) => void, reject: (reason?: any) => void) => {
-        axios.get(url).then(res => {
-          const geojson = res.data;
-          this.adminList['sector'] = geojson;
-          const select: HTMLSelectElement = <HTMLSelectElement>document.getElementById(`mapbox-gl-admin-select-sector`);   
-          this.setSelectItems(select, 'sector', 'Sector', geojson);
-          resolve();
-        })
-      })
-    }
-
-    private getCells() {
-      this.setSelectedValue('village', 'Village');
-
-      this.changeSelectDisabled('province', true);
-      this.changeSelectDisabled('district', false);
-      this.changeSelectDisabled('sector', false);
-      this.changeSelectDisabled('cell', false);
-      this.changeSelectDisabled('village', true);
-
-      const province: HTMLSelectElement = <HTMLSelectElement>document.getElementById(`mapbox-gl-admin-select-province`);  
-      const district: HTMLSelectElement = <HTMLSelectElement>document.getElementById(`mapbox-gl-admin-select-district`);  
-      const sector: HTMLSelectElement = <HTMLSelectElement>document.getElementById(`mapbox-gl-admin-select-sector`);  
-      const url = `${this.url}/${province.value}/${district.value}/${sector.value}/cell.geojson`;
-      return new Promise<any>((resolve: (value?: any) => void, reject: (reason?: any) => void) => {
-        axios.get(url).then(res => {
-          const geojson = res.data;
-          this.adminList['cell'] = geojson;
-          const select: HTMLSelectElement = <HTMLSelectElement>document.getElementById(`mapbox-gl-admin-select-cell`);   
-          this.setSelectItems(select, 'cell', 'Cell', geojson);
-          resolve();
-        })
-      })
-    }
-
-    private getVillages() {
-      this.changeSelectDisabled('province', true);
-      this.changeSelectDisabled('district', true);
-      this.changeSelectDisabled('sector', false);
-      this.changeSelectDisabled('cell', false);
-      this.changeSelectDisabled('village', false);
-
-      const province: HTMLSelectElement = <HTMLSelectElement>document.getElementById(`mapbox-gl-admin-select-province`);  
-      const district: HTMLSelectElement = <HTMLSelectElement>document.getElementById(`mapbox-gl-admin-select-district`);  
-      const sector: HTMLSelectElement = <HTMLSelectElement>document.getElementById(`mapbox-gl-admin-select-sector`); 
-      const cell: HTMLSelectElement = <HTMLSelectElement>document.getElementById(`mapbox-gl-admin-select-cell`);  
-      const url = `${this.url}/${province.value}/${district.value}/${sector.value}/${cell.value}/village.geojson`;
-      return new Promise<any>((resolve: (value?: any) => void, reject: (reason?: any) => void) => {
-        axios.get(url).then(res => {
-          const geojson = res.data;
-          this.adminList['village'] = geojson;
-          const select: HTMLSelectElement = <HTMLSelectElement>document.getElementById(`mapbox-gl-admin-select-village`);   
-          this.setSelectItems(select, 'village', 'Village', geojson);
+          this.adminList[config.id] = geojson;
+          this.setSelectItems(config.select, config.id, config.title, geojson);
           resolve();
         })
       })
