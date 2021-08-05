@@ -334,6 +334,7 @@ export default class MapboxAdminBoundaryControl implements IControl
         this.mainContainer.style.display = "none";
         this.mainButton.style.display = "block";
 
+        if (!this.map?.getLayer('selected-boundary')) return;
         var visibility = this.map?.getLayoutProperty(
           'selected-boundary',
           'visibility'
