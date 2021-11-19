@@ -6,7 +6,7 @@ This module adds area switcher control which is able to zoom administrative boun
 ## Installation:
 
 ```bash
-npm i https://github.com/WASAC/mapbox-gl-admin-boundary.git
+npm i @WASAC/mapbox-gl-admin-boundary
 ```
 
 ## Demo:

@@ -35,4 +35,3 @@ jobs:
         git remote set-url origin https://x-access-token:${NODE_AUTH_TOKEN}@github.com/wasac/
 mapbox-gl-admin-boundary.git
         npm run deploy
-      
